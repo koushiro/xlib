@@ -3,7 +3,7 @@ project(xlib C)
 
 set(CMAKE_C_STANDARD 99)
 
-set(DEPS_DIR ${PROJECT_SOURCE_DIR}/deps)
+include_directories(${PROJECT_SOURCE_DIR}/src)
 
 add_subdirectory(src)
 add_subdirectory(tests)

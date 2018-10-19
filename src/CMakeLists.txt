@@ -1,8 +1,10 @@
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/target/lib)
 
 set(XLIB
-        xstring.h
-        xstring.c
+        xalloc.h
+        xalloc.c
+        xstr.h
+        xstr.c
         xlist.h
         xlist.c
         xdict.h
