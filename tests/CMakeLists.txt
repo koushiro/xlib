@@ -3,6 +3,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/target/bin)
 set(DEPENDENT_LIBRARIES xlib)
 
 set(TEST_FILES
+        test_xstr.c
         )
 
 foreach(test_file ${TEST_FILES})

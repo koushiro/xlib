@@ -15,9 +15,11 @@ void *xcalloc(size_t num, size_t size) {
 }
 
 void *xrealloc(void *ptr, size_t size) {
+    if (ptr == NULL) return NULL;
     return realloc(ptr, size);
 }
 
 void xfree(void* ptr) {
+    if (ptr == NULL) return;
     free(ptr);
 }

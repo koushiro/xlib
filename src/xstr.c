@@ -12,7 +12,7 @@ const char *XSTR_NOINIT = "XSTR_NOINIT";
 
 xstr xstr_new_len(const void *init, size_t init_len) {
     xstr s;
-    size_t hdr_size = sizeof(struct xstr_hdr);
+    size_t hdr_size = sizeof(xstr_hdr);
     void *ptr = xmalloc(hdr_size + init_len + 1);
     if (init == XSTR_NOINIT) {
         init = NULL;
@@ -21,7 +21,7 @@ xstr xstr_new_len(const void *init, size_t init_len) {
     }
     if (ptr == NULL) return NULL;
 
-    struct xstr_hdr *hdr = (struct xstr_hdr*)ptr;
+    xstr_hdr *hdr = (xstr_hdr*)ptr;
     hdr->len = init_len;
     hdr->cap = init_len;
     s = (xstr)(ptr + hdr_size);
@@ -74,7 +74,7 @@ xstr xstr_expand(xstr s, size_t add_len) {
     } else {
         new_len += XSTR_MAX_PREALLOC;
     }
-    size_t hdr_size = sizeof(struct xstr_hdr);
+    size_t hdr_size = sizeof(xstr_hdr);
     void *ptr = xrealloc(xstr_alloc_ptr(s), hdr_size + new_len + 1);
     if (ptr == NULL) return NULL;
     s = (char*)ptr + hdr_size;
@@ -84,7 +84,7 @@ xstr xstr_expand(xstr s, size_t add_len) {
 
 xstr xstr_shrink(xstr s) {
     size_t len = xstr_len(s);
-    size_t hdr_size = sizeof(struct xstr_hdr);
+    size_t hdr_size = sizeof(xstr_hdr);
     void *ptr = xrealloc(xstr_alloc_ptr(s), hdr_size + len + 1);
     if (ptr == NULL) return NULL;
     s = (xstr)(ptr + hdr_size);

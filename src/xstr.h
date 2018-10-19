@@ -14,18 +14,18 @@
 
 typedef char *xstr;
 
-struct __attribute__ ((__packed__)) xstr_hdr {
+typedef struct __attribute__ ((__packed__)) xstr_hdr {
     size_t len;
     size_t cap;
     char buf[];
-};
+} xstr_hdr;
 
-static inline struct xstr_hdr* xstr_hdr_ptr(const xstr s) {
-    return (struct xstr_hdr*)(s - sizeof(struct xstr_hdr));
+static inline xstr_hdr* xstr_hdr_ptr(const xstr s) {
+    return (xstr_hdr*)(s - sizeof(xstr_hdr));
 }
 
 static inline void* xstr_alloc_ptr(const xstr s){
-    return (void*)(s - sizeof(struct xstr_hdr));
+    return (void*)(s - sizeof(xstr_hdr));
 }
 
 static inline size_t xstr_len(const xstr s) {
@@ -37,12 +37,12 @@ static inline size_t xstr_cap(const xstr s) {
 }
 
 static inline size_t xstr_avail(const xstr s) {
-    struct xstr_hdr *hdr = xstr_hdr_ptr(s);
+    xstr_hdr *hdr = xstr_hdr_ptr(s);
     return hdr->cap - hdr->len;
 }
 
 static inline size_t xstr_alloc_size(const xstr s) {
-    return sizeof(struct xstr_hdr) + xstr_cap(s) + 1;
+    return sizeof(xstr_hdr) + xstr_cap(s) + 1;
 }
 
 static inline void xstr_set_len(xstr s, size_t new_len) {
