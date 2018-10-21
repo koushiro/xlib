@@ -2,29 +2,25 @@
 // Created by koushiro on 10/18/18.
 //
 
-#include <string.h>
+#include <assert.h>
 #include <ctype.h>
+#include <string.h>
 
 #include "xstr.h"
 #include "xalloc.h"
 
-const char *XSTR_NOINIT = "XSTR_NOINIT";
-
-xstr xstr_new_len(const void *init, size_t init_len) {
-    xstr s;
+xstr xstr_create_raw(const void *init, size_t init_len) {
     size_t hdr_size = sizeof(xstr_hdr);
     void *ptr = xmalloc(hdr_size + init_len + 1);
-    if (init == XSTR_NOINIT) {
-        init = NULL;
-    } else if (!init) {
+    if (ptr == NULL) return NULL;
+    if (!init) {
         memset(ptr, 0, hdr_size + init_len + 1);
     }
-    if (ptr == NULL) return NULL;
 
     xstr_hdr *hdr = (xstr_hdr*)ptr;
     hdr->len = init_len;
     hdr->cap = init_len;
-    s = (xstr)(ptr + hdr_size);
+    xstr s = (xstr)(ptr + hdr_size);
 
     if (init_len && init) {
         memcpy(s, init, init_len);
@@ -33,37 +29,24 @@ xstr xstr_new_len(const void *init, size_t init_len) {
     return s;
 }
 
-xstr xstr_new(const char *init) {
+xstr xstr_create(const char *init) {
     size_t init_len = (init == NULL) ? 0 : strlen(init);
-    return xstr_new_len((void*)init, init_len);
+    return xstr_create_raw((void *)init, init_len);
 }
 
-xstr xstr_empty(void) {
-    return xstr_new_len((void*)"", 0);
-}
-
-xstr xstr_dupcalite(const xstr s) {
-    return xstr_new_len((void*)s, xstr_len(s));
-}
-
-void xstr_free(xstr s) {
+void xstr_destroy(xstr s) {
     if (s == NULL) return;
     xfree(xstr_alloc_ptr(s));
 }
 
-xstr xstr_grow_zero(xstr s, size_t len) {
-    size_t cur_len = xstr_len(s);
-    if (len < cur_len) return s;
-
-    s = xstr_expand(s, len - cur_len);
-    if (s == NULL) return NULL;
-
-    memset(s + cur_len, 0, len - cur_len + 1);
-    xstr_set_len(s, len);
-    return s;
+void xstr_clear(xstr s) {
+    if (s == NULL) return;
+    s[0] = '\0';
+    xstr_set_len(s, 0);
 }
 
 xstr xstr_expand(xstr s, size_t add_len) {
+    assert(s);
     size_t avail = xstr_avail(s);
     if (avail > add_len) return s;
 
@@ -83,6 +66,7 @@ xstr xstr_expand(xstr s, size_t add_len) {
 }
 
 xstr xstr_shrink(xstr s) {
+    assert(s);
     size_t len = xstr_len(s);
     size_t hdr_size = sizeof(xstr_hdr);
     void *ptr = xrealloc(xstr_alloc_ptr(s), hdr_size + len + 1);
@@ -92,12 +76,21 @@ xstr xstr_shrink(xstr s) {
     return s;
 }
 
-void xstr_clear(xstr s) {
-    s[0] = '\0';
-    xstr_set_len(s, 0);
+xstr xstr_grow(xstr s, int ch, size_t len) {
+    assert(s);
+    size_t cur_len = xstr_len(s);
+    if (len < cur_len) return s;
+
+    s = xstr_expand(s, len - cur_len);
+    if (s == NULL) return NULL;
+
+    memset(s + cur_len, ch, len - cur_len + 1);
+    xstr_set_len(s, len);
+    return s;
 }
 
 int xstr_cmp(const xstr s1, const xstr s2) {
+    assert(s1 && s2);
     size_t len1 = xstr_len(s1);
     size_t len2 = xstr_len(s2);
     size_t min_len = (len1 < len2) ? len1 : len2;
@@ -106,7 +99,8 @@ int xstr_cmp(const xstr s1, const xstr s2) {
     return cmp;
 }
 
-xstr xstr_copy_len(xstr dest, const char *src, size_t len) {
+xstr xstr_copy(xstr dest, const void *src, size_t len) {
+    assert(dest && src);
     if (xstr_cap(dest) < len) {
         dest = xstr_expand(dest, len - xstr_len(dest));
         if (dest == NULL) return NULL;
@@ -117,11 +111,16 @@ xstr xstr_copy_len(xstr dest, const char *src, size_t len) {
     return dest;
 }
 
-xstr xstr_copy(xstr dest, const char *src) {
-    return xstr_copy_len(dest, src, strlen(src));
+xstr xstr_copy_cstr(xstr dest, const char *src) {
+    return xstr_copy(dest, src, strlen(src));
 }
 
-xstr xstr_cat_len(xstr dest, const void *src, size_t len) {
+xstr xstr_copy_xstr(xstr dest, const xstr src) {
+    return xstr_copy(dest, src, xstr_len(src));
+}
+
+xstr xstr_cat(xstr dest, const void *src, size_t len) {
+    assert(dest && src);
     size_t cur_len = xstr_len(dest);
     dest = xstr_expand(dest, len);
     if (dest == NULL) return NULL;
@@ -131,37 +130,38 @@ xstr xstr_cat_len(xstr dest, const void *src, size_t len) {
     return dest;
 }
 
-xstr xstr_cat(xstr dest, const char *src) {
-    return xstr_cat_len(dest, src, strlen(src));
+xstr xstr_cat_cstr(xstr dest, const char *src) {
+    return xstr_cat(dest, src, strlen(src));
 }
 
 xstr xstr_cat_xstr(xstr dest, const xstr src) {
-    return xstr_cat_len(dest, src, xstr_len(src));
+    return xstr_cat(dest, src, xstr_len(src));
 }
 
-xstr xstr_join(char **argv, int argc, const char *sep) {
-    xstr join = xstr_empty();
+xstr xstr_join_cstr(char **argv, size_t argc, const char *sep) {
+    xstr join = xstr_create_raw((void *) "", 0);
     for (size_t i = 0; i < argc; ++i) {
-        join = xstr_cat(join, argv[i]);
+        join = xstr_cat_cstr(join, argv[i]);
         if (i != argc - 1) {
-            join = xstr_cat(join, sep);
+            join = xstr_cat_cstr(join, sep);
         }
     }
     return join;
 }
 
-xstr xstr_join_xstr(xstr *argv, int argc, const char *sep, size_t sep_len) {
-    xstr join = xstr_empty();
+xstr xstr_join_xstr(xstr *argv, size_t argc, const char *sep, size_t sep_len) {
+    xstr join = xstr_create_raw((void *) "", 0);
     for (size_t i = 0; i < argc; ++i) {
         join = xstr_cat_xstr(join, argv[i]);
         if (i != argc - 1) {
-            join = xstr_cat_len(join, sep, sep_len);
+            join = xstr_cat(join, sep, sep_len);
         }
     }
     return join;
 }
 
 void xstr_toupper(xstr s) {
+    assert(s);
     size_t len = xstr_len(s);
     for (size_t i = 0; i < len; ++i) {
         s[i] = (char) toupper(s[i]);
@@ -169,6 +169,7 @@ void xstr_toupper(xstr s) {
 }
 
 void xstr_tolower(xstr s) {
+    assert(s);
     size_t len = xstr_len(s);
     for (size_t i = 0; i < len; ++i) {
         s[i] = (char)tolower(s[i]);
@@ -203,7 +204,7 @@ xstr xstr_cat_vprintf(xstr s, const char *fmt, va_list ap) {
         break;
     }
 
-    xstr t = xstr_cat(s, buf);
+    xstr t = xstr_cat_cstr(s, buf);
     if (buf != static_buf) xfree(buf);
     return t;
 }
@@ -217,6 +218,7 @@ xstr xstr_cat_printf(xstr s, const char *fmt, ...) {
 }
 
 xstr xstr_trim(xstr s, const char *cset) {
+    assert(s && cset);
     char *start = s;
     char *sp = start;
     char *end = s + xstr_len(s) - 1;
@@ -232,6 +234,7 @@ xstr xstr_trim(xstr s, const char *cset) {
 }
 
 void xstr_range(xstr s, ssize_t start, ssize_t end) {
+    assert(s);
     size_t len = xstr_len(s);
     if (len == 0) return;
     if (start < 0) {

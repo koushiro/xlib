@@ -2,6 +2,8 @@
 // Created by koushiro on 10/18/18.
 //
 
+#include <assert.h>
+
 #include "xlist.h"
 #include "xalloc.h"
 
@@ -18,7 +20,7 @@ xlist *xlist_create(void) {
     return list;
 }
 
-void xlist_release(xlist *list) {
+void xlist_destroy(xlist *list) {
     xlist_clear(list);
     xfree(list);
 }
@@ -39,8 +41,7 @@ void xlist_clear(xlist *list) {
 }
 
 xlist *xlist_add_node_head(xlist *list, void *value) {
-    if (list == NULL) return NULL;
-
+    assert(list && value);
     xlist_node *node;
     if ((node = xmalloc(sizeof(xlist_node))) == NULL) return NULL;
 
@@ -59,8 +60,7 @@ xlist *xlist_add_node_head(xlist *list, void *value) {
 }
 
 xlist *xlist_add_node_tail(xlist *list, void *value) {
-    if (list == NULL) return NULL;
-
+    assert(list && value);
     xlist_node *node;
     if ((node = xmalloc(sizeof(xlist_node))) == NULL) return NULL;
 
@@ -79,6 +79,7 @@ xlist *xlist_add_node_tail(xlist *list, void *value) {
 }
 
 xlist *xlist_insert_node(xlist *list, xlist_node *pos, int after, void *value) {
+    assert(list && pos && value);
     xlist_node *node;
     if ((node = xmalloc(sizeof(xlist_node))) == NULL) return NULL;
 
@@ -105,6 +106,7 @@ xlist *xlist_insert_node(xlist *list, xlist_node *pos, int after, void *value) {
 }
 
 void xlist_delete_node(xlist *list, xlist_node *node) {
+    assert(list && node);
     if (node->prev) {
         node->prev->next = node->next;
     } else {
@@ -121,6 +123,7 @@ void xlist_delete_node(xlist *list, xlist_node *node) {
 }
 
 xlist_node *xlist_search_node(xlist *list, void *value) {
+    assert(list && value);
     xlist_iter iter;
     xlist_iter_rewind_head(list, &iter);
 
@@ -142,6 +145,7 @@ xlist_node *xlist_search_node(xlist *list, void *value) {
 }
 
 xlist_iter *xlist_iter_create(xlist *list, xlist_iter_direction direction) {
+    assert(list);
     xlist_iter *iter;
     if ((iter = xmalloc(sizeof(xlist_iter))) == NULL) return NULL;
 
@@ -155,7 +159,13 @@ xlist_iter *xlist_iter_create(xlist *list, xlist_iter_direction direction) {
     return iter;
 }
 
+void xlist_iter_destroy(xlist_iter *iter) {
+    if (iter == NULL) return;
+    xfree(iter);
+}
+
 xlist_node *xlist_iter_next(xlist_iter *iter) {
+    assert(iter);
     xlist_node *cur_node = iter->next;
     if (cur_node) {
         if (iter->direction == BACKWARD) {
@@ -168,21 +178,20 @@ xlist_node *xlist_iter_next(xlist_iter *iter) {
     return cur_node;
 }
 
-void xlist_iter_release(xlist_iter *iter) {
-    xfree(iter);
-}
-
 void xlist_iter_rewind_head(xlist *list, xlist_iter *iter) {
+    assert(list && iter);
     iter->next = list->head;
     iter->direction = BACKWARD;
 }
 
 void xlist_iter_rewind_tail(xlist *list, xlist_iter *iter) {
+    assert(list && iter);
     iter->next = list->tail;
     iter->direction = FORWARD;
 }
 
-xlist *xlist_duplicate(xlist *origin) {
+xlist *xlist_dup(xlist *origin) {
+    assert(origin);
     xlist *copy;
     if ((copy = xmalloc(sizeof(xlist))) == NULL) return NULL;
 
@@ -211,12 +220,13 @@ xlist *xlist_duplicate(xlist *origin) {
 
     CLEANUP:
     {
-        xlist_release(copy);
+        xlist_destroy(copy);
         return NULL;
     }
 }
 
 void xlist_join(xlist *list, xlist *other) {
+    assert(list && other);
     if (other->len == 0) return;
 
     if (list->len == 0) {
