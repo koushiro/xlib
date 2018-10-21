@@ -144,52 +144,6 @@ xlist_node *xlist_search_node(xlist *list, void *value) {
     return NULL;
 }
 
-xlist_iter *xlist_iter_create(xlist *list, xlist_iter_direction direction) {
-    assert(list);
-    xlist_iter *iter;
-    if ((iter = xmalloc(sizeof(xlist_iter))) == NULL) return NULL;
-
-    if (direction == BACKWARD) {
-        iter->next = list->head;
-    } else {
-        // direction == FORWARD
-        iter->next = list->tail;
-    }
-    iter->direction = direction;
-    return iter;
-}
-
-void xlist_iter_destroy(xlist_iter *iter) {
-    if (iter == NULL) return;
-    xfree(iter);
-}
-
-xlist_node *xlist_iter_next(xlist_iter *iter) {
-    assert(iter);
-    xlist_node *cur_node = iter->next;
-    if (cur_node) {
-        if (iter->direction == BACKWARD) {
-            iter->next = cur_node->next;
-        } else {
-            // directoin == FORWARD
-            iter->next = cur_node->prev;
-        }
-    }
-    return cur_node;
-}
-
-void xlist_iter_rewind_head(xlist *list, xlist_iter *iter) {
-    assert(list && iter);
-    iter->next = list->head;
-    iter->direction = BACKWARD;
-}
-
-void xlist_iter_rewind_tail(xlist *list, xlist_iter *iter) {
-    assert(list && iter);
-    iter->next = list->tail;
-    iter->direction = FORWARD;
-}
-
 xlist *xlist_dup(xlist *origin) {
     assert(origin);
     xlist *copy;
@@ -241,4 +195,50 @@ void xlist_join(xlist *list, xlist *other) {
     list->len += other->len;
     other->head = other->tail = NULL;
     other->len = 0;
+}
+
+xlist_iter *xlist_iter_create(xlist *list, xlist_iter_direction direction) {
+    assert(list);
+    xlist_iter *iter;
+    if ((iter = xmalloc(sizeof(xlist_iter))) == NULL) return NULL;
+
+    if (direction == BACKWARD) {
+        iter->next = list->head;
+    } else {
+        // direction == FORWARD
+        iter->next = list->tail;
+    }
+    iter->direction = direction;
+    return iter;
+}
+
+void xlist_iter_destroy(xlist_iter *iter) {
+    if (iter == NULL) return;
+    xfree(iter);
+}
+
+xlist_node *xlist_iter_next(xlist_iter *iter) {
+    assert(iter);
+    xlist_node *cur_node = iter->next;
+    if (cur_node) {
+        if (iter->direction == BACKWARD) {
+            iter->next = cur_node->next;
+        } else {
+            // directoin == FORWARD
+            iter->next = cur_node->prev;
+        }
+    }
+    return cur_node;
+}
+
+void xlist_iter_rewind_head(xlist *list, xlist_iter *iter) {
+    assert(list && iter);
+    iter->next = list->head;
+    iter->direction = BACKWARD;
+}
+
+void xlist_iter_rewind_tail(xlist *list, xlist_iter *iter) {
+    assert(list && iter);
+    iter->next = list->tail;
+    iter->direction = FORWARD;
 }

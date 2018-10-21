@@ -63,11 +63,11 @@ xlist* xlist_insert_node(xlist *list, xlist_node *pos, int after, void *value);
 void xlist_delete_node(xlist *list, xlist_node *node);
 xlist_node* xlist_search_node(xlist *list, void *value);
 
+xlist* xlist_dup(xlist *origin);
+void xlist_join(xlist *list, xlist *other);
+
 xlist_iter* xlist_iter_create(xlist *list, xlist_iter_direction direction);
 void xlist_iter_destroy(xlist_iter *iter);
 xlist_node* xlist_iter_next(xlist_iter *iter);
 void xlist_iter_rewind_head(xlist *list, xlist_iter *iter);
 void xlist_iter_rewind_tail(xlist *list, xlist_iter *iter);
-
-xlist* xlist_dup(xlist *origin);
-void xlist_join(xlist *list, xlist *other);

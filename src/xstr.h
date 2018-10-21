@@ -2,7 +2,7 @@
 // Created by koushiro on 10/18/18.
 //
 
-// References from https://github.com/antirez/redis/blob/unstable/src/sds.h
+// References from https://github.com/antirez/redis/blob/unstable/deps/hiredis/sds.h
 
 #pragma once
 
