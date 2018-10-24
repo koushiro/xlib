@@ -23,14 +23,14 @@ static int xdict_init(xdict *dict, xdict_type *type, void *data) {
     xdict_reset(dict);
     dict->type = type;
     dict->data = data;
+    return XDICT_OK;
 }
 
 // ============================================================================
 
 xdict* xdict_create(xdict_type *type, void *data) {
     assert(type && data);
-    xdict *dict;
-    if ((dict = xmalloc(sizeof(xdict))) == NULL) return NULL;
+    xdict *dict = xmalloc(sizeof(xdict));
     xdict_init(dict, type, data);
     return dict;
 }
@@ -61,16 +61,19 @@ void xdict_clear(xdict *dict) {
 int xdict_expand(xdict *dict, unsigned long size) {
     assert(dict);
 
+    return XDICT_OK;
 }
 
 int xdict_add(xdict *dict, void *key, void *val) {
     assert(dict && key && val);
 
+    return XDICT_OK;
 }
 
 int xdict_replace(xdict *dict, void *key, void *val) {
     assert(dict && key && val);
 
+    return XDICT_OK;
 }
 
 int xdict_delete(xdict *dict, const void *key) {
@@ -114,11 +117,11 @@ xdict_entry* xdict_search(xdict *dict, const void *key) {
 
 xdict_iter* xdict_iter_create(xdict *dict) {
     assert(dict);
-    xdict_iter *iter;
-    if ((iter = xmalloc(sizeof(xdict_iter))) == NULL) return NULL;
+    xdict_iter *iter = xmalloc(sizeof(xdict_iter));
     iter->dict = dict;
     iter->index = 0;
-    iter->next = dict->size > 0 ? dict->table[iter->index] : NULL;
+    iter->node = dict->size > 0 ? dict->table[iter->index] : NULL;
+    xdict_iter_next(iter);
     return iter;
 }
 
@@ -129,16 +132,16 @@ void xdict_iter_destroy(xdict_iter *iter) {
 xdict_entry* xdict_iter_next(xdict_iter *iter) {
     assert(iter);
     while (1) {
-        xdict_entry *cur_entry = iter->next;
+        xdict_entry *cur_entry = iter->node;
         if (cur_entry == NULL) {
             iter->index++;
             if (iter->index >= iter->dict->size) break;
-            iter->next = iter->dict->table[iter->index];
+            iter->node = iter->dict->table[iter->index];
         } else {
-            iter->next = cur_entry->next;
+            iter->node = cur_entry->next;
         }
 
-        if (iter->next) {
+        if (iter->node) {
             return cur_entry;
         }
     }

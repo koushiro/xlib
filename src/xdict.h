@@ -54,7 +54,7 @@ typedef struct xdict {
 typedef struct xdict_iter {
     struct xdict *dict;
     size_t index;
-    struct xdict_entry *next;
+    struct xdict_entry *node;
 } xdict_iter;
 
 static inline void xdict_set_key(xdict *dict, xdict_entry *entry, void *key) {

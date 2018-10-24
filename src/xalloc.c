@@ -4,19 +4,38 @@
 
 #include "xalloc.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 
+static void xalloc_default_oom(size_t size) {
+    fprintf(stderr, "Out of memory trying to allocate %zu bytes\n", size);
+    fflush(stderr);
+    abort();
+}
+
+static void (*xalloc_oom_handler)(size_t) = xalloc_default_oom;
+
+void xalloc_set_oom_handler(void (*oom_handler)(size_t)) {
+    xalloc_oom_handler = oom_handler;
+}
+
 void *xmalloc(size_t size) {
-    return malloc(size);
+    void *ptr = malloc(size);
+    if (!ptr) xalloc_oom_handler(size);
+    return ptr;
 }
 
 void *xcalloc(size_t num, size_t size) {
-    return calloc(num, size);
+    void *ptr = calloc(num, size);
+    if (!ptr) xalloc_oom_handler(size);
+    return ptr;
 }
 
 void *xrealloc(void *ptr, size_t size) {
     if (ptr == NULL) return NULL;
-    return realloc(ptr, size);
+    void *newptr = realloc(ptr, size);
+    if (!newptr) xalloc_oom_handler(size);
+    return newptr;
 }
 
 void xfree(void* ptr) {

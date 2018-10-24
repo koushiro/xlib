@@ -6,13 +6,12 @@
 #include <ctype.h>
 #include <string.h>
 
-#include "xstr.h"
 #include "xalloc.h"
+#include "xstr.h"
 
 xstr xstr_create_raw(const void *init, size_t init_len) {
     size_t hdr_size = sizeof(xstr_hdr);
     void *ptr = xmalloc(hdr_size + init_len + 1);
-    if (ptr == NULL) return NULL;
     if (!init) {
         memset(ptr, 0, hdr_size + init_len + 1);
     }
@@ -45,10 +44,14 @@ void xstr_clear(xstr s) {
     xstr_set_len(s, 0);
 }
 
+xstr xstr_dup(const xstr s) {
+    return xstr_create_raw(s, xstr_len(s));
+}
+
 xstr xstr_expand(xstr s, size_t add_len) {
     assert(s);
     size_t avail = xstr_avail(s);
-    if (avail > add_len) return s;
+    if (avail >= add_len) return s;
 
     size_t len = xstr_len(s);
     size_t new_len = len + add_len;
@@ -59,7 +62,6 @@ xstr xstr_expand(xstr s, size_t add_len) {
     }
     size_t hdr_size = sizeof(xstr_hdr);
     void *ptr = xrealloc(xstr_alloc_ptr(s), hdr_size + new_len + 1);
-    if (ptr == NULL) return NULL;
     s = (char*)ptr + hdr_size;
     xstr_set_cap(s, new_len);
     return s;
@@ -70,22 +72,8 @@ xstr xstr_shrink(xstr s) {
     size_t len = xstr_len(s);
     size_t hdr_size = sizeof(xstr_hdr);
     void *ptr = xrealloc(xstr_alloc_ptr(s), hdr_size + len + 1);
-    if (ptr == NULL) return NULL;
     s = (xstr)(ptr + hdr_size);
     xstr_set_cap(s, len);
-    return s;
-}
-
-xstr xstr_grow(xstr s, int ch, size_t len) {
-    assert(s);
-    size_t cur_len = xstr_len(s);
-    if (len < cur_len) return s;
-
-    s = xstr_expand(s, len - cur_len);
-    if (s == NULL) return NULL;
-
-    memset(s + cur_len, ch, len - cur_len + 1);
-    xstr_set_len(s, len);
     return s;
 }
 
@@ -138,44 +126,6 @@ xstr xstr_cat_xstr(xstr dest, const xstr src) {
     return xstr_cat(dest, src, xstr_len(src));
 }
 
-xstr xstr_join_cstr(char **argv, size_t argc, const char *sep) {
-    xstr join = xstr_create_raw((void *) "", 0);
-    for (size_t i = 0; i < argc; ++i) {
-        join = xstr_cat_cstr(join, argv[i]);
-        if (i != argc - 1) {
-            join = xstr_cat_cstr(join, sep);
-        }
-    }
-    return join;
-}
-
-xstr xstr_join_xstr(xstr *argv, size_t argc, const char *sep, size_t sep_len) {
-    xstr join = xstr_create_raw((void *) "", 0);
-    for (size_t i = 0; i < argc; ++i) {
-        join = xstr_cat_xstr(join, argv[i]);
-        if (i != argc - 1) {
-            join = xstr_cat(join, sep, sep_len);
-        }
-    }
-    return join;
-}
-
-void xstr_toupper(xstr s) {
-    assert(s);
-    size_t len = xstr_len(s);
-    for (size_t i = 0; i < len; ++i) {
-        s[i] = (char) toupper(s[i]);
-    }
-}
-
-void xstr_tolower(xstr s) {
-    assert(s);
-    size_t len = xstr_len(s);
-    for (size_t i = 0; i < len; ++i) {
-        s[i] = (char)tolower(s[i]);
-    }
-}
-
 xstr xstr_cat_vprintf(xstr s, const char *fmt, va_list ap) {
     char static_buf[1024];
     char *buf = static_buf;
@@ -183,7 +133,6 @@ xstr xstr_cat_vprintf(xstr s, const char *fmt, va_list ap) {
 
     if (buf_len > sizeof(static_buf)) {
         buf = xmalloc(buf_len);
-        if (buf == NULL) return NULL;
     } else {
         buf_len = sizeof(static_buf);
     }
@@ -198,7 +147,6 @@ xstr xstr_cat_vprintf(xstr s, const char *fmt, va_list ap) {
             if (buf != static_buf) xfree(buf);
             buf_len *= 2;
             buf = xmalloc(buf_len);
-            if (buf == NULL) return NULL;
             continue;
         }
         break;
@@ -217,6 +165,46 @@ xstr xstr_cat_printf(xstr s, const char *fmt, ...) {
     return t;
 }
 
+xstr xstr_join_cstr(char **argv, size_t argc, const char *sep) {
+    xstr join = xstr_create_raw((void *) "", 0);
+    for (size_t i = 0; i < argc; ++i) {
+        join = xstr_cat_cstr(join, argv[i]);
+        if (i != argc - 1) {
+            join = xstr_cat_cstr(join, sep);
+        }
+    }
+    return join;
+}
+
+xstr xstr_join_xstr(xstr *argv, size_t argc, const void *sep, size_t sep_len) {
+    xstr join = xstr_create_raw((void *) "", 0);
+    for (size_t i = 0; i < argc; ++i) {
+        join = xstr_cat_xstr(join, argv[i]);
+        if (i != argc - 1) {
+            join = xstr_cat(join, sep, sep_len);
+        }
+    }
+    return join;
+}
+
+xstr xstr_toupper(xstr s) {
+    assert(s);
+    size_t len = xstr_len(s);
+    for (size_t i = 0; i < len; ++i) {
+        s[i] = (char) toupper(s[i]);
+    }
+    return s;
+}
+
+xstr xstr_tolower(xstr s) {
+    assert(s);
+    size_t len = xstr_len(s);
+    for (size_t i = 0; i < len; ++i) {
+        s[i] = (char)tolower(s[i]);
+    }
+    return s;
+}
+
 xstr xstr_trim(xstr s, const char *cset) {
     assert(s && cset);
     char *start = s;
@@ -233,10 +221,10 @@ xstr xstr_trim(xstr s, const char *cset) {
     return s;
 }
 
-void xstr_range(xstr s, ssize_t start, ssize_t end) {
+xstr xstr_range(xstr s, ssize_t start, ssize_t end) {
     assert(s);
     size_t len = xstr_len(s);
-    if (len == 0) return;
+    if (len == 0) return s;
     if (start < 0) {
         start += len;
         if (start < 0) start = 0;
@@ -262,4 +250,5 @@ void xstr_range(xstr s, ssize_t start, ssize_t end) {
     }
     s[new_len] = '\0';
     xstr_set_len(s, new_len);
+    return s;
 }

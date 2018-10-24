@@ -15,12 +15,12 @@ typedef struct xlist_node {
 } xlist_node;
 
 typedef enum {
-    BACKWARD = 0,
-    FORWARD = 1,
+    FORWARD = 0,    // head --> tail
+    BACKWARD = 1,   // tail --> head
 } xlist_iter_direction;
 
 typedef struct xlist_iter {
-    struct xlist_node *next;
+    struct xlist_node *node;
     xlist_iter_direction direction;
 } xlist_iter;
 

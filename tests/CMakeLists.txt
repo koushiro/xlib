@@ -4,6 +4,8 @@ set(DEPENDENT_LIBRARIES xlib)
 
 set(TEST_FILES
         test_xstr.c
+        test_xlist.c
+        test_xskiplist.c
         )
 
 foreach(test_file ${TEST_FILES})

@@ -3,6 +3,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/target/lib)
 set(XLIB
         xalloc.h
         xalloc.c
+        xtest.h
         xstr.h
         xstr.c
         xlist.h

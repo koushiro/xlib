@@ -7,10 +7,8 @@
 #include "xlist.h"
 #include "xalloc.h"
 
-xlist *xlist_create(void) {
-    xlist *list;
-    if ((list = xmalloc(sizeof(xlist))) == NULL) return NULL;
-
+xlist* xlist_create(void) {
+    xlist *list = xmalloc(sizeof(xlist));
     list->head = NULL;
     list->tail = NULL;
     list->len = 0;
@@ -40,11 +38,9 @@ void xlist_clear(xlist *list) {
     list->len = 0;
 }
 
-xlist *xlist_add_node_head(xlist *list, void *value) {
+xlist* xlist_add_node_head(xlist *list, void *value) {
     assert(list && value);
-    xlist_node *node;
-    if ((node = xmalloc(sizeof(xlist_node))) == NULL) return NULL;
-
+    xlist_node *node = xmalloc(sizeof(xlist_node));
     node->value = value;
     if (list->len == 0) {
         list->head = list->tail = node;
@@ -59,11 +55,9 @@ xlist *xlist_add_node_head(xlist *list, void *value) {
     return list;
 }
 
-xlist *xlist_add_node_tail(xlist *list, void *value) {
+xlist* xlist_add_node_tail(xlist *list, void *value) {
     assert(list && value);
-    xlist_node *node;
-    if ((node = xmalloc(sizeof(xlist_node))) == NULL) return NULL;
-
+    xlist_node *node = xmalloc(sizeof(xlist_node));
     node->value = value;
     if (list->len == 0) {
         list->head = list->tail = node;
@@ -78,11 +72,9 @@ xlist *xlist_add_node_tail(xlist *list, void *value) {
     return list;
 }
 
-xlist *xlist_insert_node(xlist *list, xlist_node *pos, int after, void *value) {
+xlist* xlist_insert_node(xlist *list, xlist_node *pos, int after, void *value) {
     assert(list && pos && value);
-    xlist_node *node;
-    if ((node = xmalloc(sizeof(xlist_node))) == NULL) return NULL;
-
+    xlist_node *node = xmalloc(sizeof(xlist_node));
     node->value = value;
     if (after) {
         // insert node after pos
@@ -122,7 +114,7 @@ void xlist_delete_node(xlist *list, xlist_node *node) {
     list->len--;
 }
 
-xlist_node *xlist_search_node(xlist *list, void *value) {
+xlist_node* xlist_search_node(xlist *list, void *value) {
     assert(list && value);
     xlist_iter iter;
     xlist_iter_rewind_head(list, &iter);
@@ -144,11 +136,9 @@ xlist_node *xlist_search_node(xlist *list, void *value) {
     return NULL;
 }
 
-xlist *xlist_dup(xlist *origin) {
+xlist* xlist_dup(xlist *origin) {
     assert(origin);
-    xlist *copy;
-    if ((copy = xmalloc(sizeof(xlist))) == NULL) return NULL;
-
+    xlist *copy = xmalloc(sizeof(xlist));
     copy->dup = origin->dup;
     copy->free = origin->free;
     copy->match = origin->match;
@@ -197,35 +187,32 @@ void xlist_join(xlist *list, xlist *other) {
     other->len = 0;
 }
 
-xlist_iter *xlist_iter_create(xlist *list, xlist_iter_direction direction) {
+xlist_iter* xlist_iter_create(xlist *list, xlist_iter_direction direction) {
     assert(list);
-    xlist_iter *iter;
-    if ((iter = xmalloc(sizeof(xlist_iter))) == NULL) return NULL;
-
+    xlist_iter *iter = xmalloc(sizeof(xlist_iter));
     if (direction == BACKWARD) {
-        iter->next = list->head;
+        iter->node = list->head;
     } else {
         // direction == FORWARD
-        iter->next = list->tail;
+        iter->node = list->tail;
     }
     iter->direction = direction;
     return iter;
 }
 
 void xlist_iter_destroy(xlist_iter *iter) {
-    if (iter == NULL) return;
     xfree(iter);
 }
 
-xlist_node *xlist_iter_next(xlist_iter *iter) {
+xlist_node* xlist_iter_next(xlist_iter *iter) {
     assert(iter);
-    xlist_node *cur_node = iter->next;
+    xlist_node *cur_node = iter->node;
     if (cur_node) {
-        if (iter->direction == BACKWARD) {
-            iter->next = cur_node->next;
+        if (iter->direction == FORWARD) {
+            iter->node = cur_node->next;
         } else {
-            // directoin == FORWARD
-            iter->next = cur_node->prev;
+            // directoin == BACKWARD
+            iter->node = cur_node->prev;
         }
     }
     return cur_node;
@@ -233,12 +220,12 @@ xlist_node *xlist_iter_next(xlist_iter *iter) {
 
 void xlist_iter_rewind_head(xlist *list, xlist_iter *iter) {
     assert(list && iter);
-    iter->next = list->head;
-    iter->direction = BACKWARD;
+    iter->node = list->head;
+    iter->direction = FORWARD;
 }
 
 void xlist_iter_rewind_tail(xlist *list, xlist_iter *iter) {
     assert(list && iter);
-    iter->next = list->tail;
-    iter->direction = FORWARD;
+    iter->node = list->tail;
+    iter->direction = BACKWARD;
 }
