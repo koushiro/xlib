@@ -2,7 +2,6 @@
 // Created by koushiro on 10/19/18.
 //
 
-#include <assert.h>
 #include <string.h>
 
 #include "xstr.h"

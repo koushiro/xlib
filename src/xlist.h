@@ -26,6 +26,7 @@ typedef struct xlist_iter {
 
 typedef void*(*dup_func)(void *ptr);
 typedef void(*free_func)(void *ptr);
+// \return 0: match successfully; !0: match failed.
 typedef int(*match_func)(void *ptr, void *value);
 
 typedef struct xlist {
@@ -37,34 +38,40 @@ typedef struct xlist {
     match_func match;
 } xlist;
 
-static inline xlist_node* xlist_first(xlist l) { return l.head; }
-static inline xlist_node* xlist_last(xlist l) { return l.tail; }
-static inline size_t xlist_len(xlist l) { return l.len; }
+enum {
+    // for xlist_insert_node
+    BEFORE = 0,
+    AFTER = 1,
+};
 
-static inline xlist_node* xlist_node_prev(xlist_node *n) { return n->prev; }
-static inline xlist_node* xlist_node_next(xlist_node *n) { return n->next; }
-static inline void* xlist_node_value(xlist_node *n) { return n->value; }
+static inline xlist_node* xlist_first(xlist *list) { return list->head; }
+static inline xlist_node* xlist_last(xlist *list) { return list->tail; }
+static inline size_t xlist_len(xlist *list) { return list->len; }
 
-static inline void xlist_set_dup_func(xlist list, dup_func dup) { list.dup = dup; }
-static inline void xlist_set_free_func(xlist list, free_func free) { list.free = free; }
-static inline void xlist_set_match_func(xlist list, match_func match) { list.match = match; }
+static inline xlist_node* xlist_node_prev(xlist_node *node) { return node->prev; }
+static inline xlist_node* xlist_node_next(xlist_node *node) { return node->next; }
+static inline void* xlist_node_value(xlist_node *node) { return node->value; }
 
-static inline dup_func xlist_get_dup_func(xlist list) { return list.dup; }
-static inline free_func xlist_get_free_func(xlist list) { return list.free; }
-static inline match_func xlist_get_match_func(xlist list) { return list.match; }
+static inline void xlist_set_dup_func(xlist *list, dup_func dup) { list->dup = dup; }
+static inline void xlist_set_free_func(xlist *list, free_func free) { list->free = free; }
+static inline void xlist_set_match_func(xlist *list, match_func match) { list->match = match; }
+
+static inline dup_func xlist_get_dup_func(xlist *list) { return list->dup; }
+static inline free_func xlist_get_free_func(xlist *list) { return list->free; }
+static inline match_func xlist_get_match_func(xlist *list) { return list->match; }
 
 xlist* xlist_create(void);
 void xlist_destroy(xlist *list);
 void xlist_clear(xlist *list);
+xlist* xlist_dup(xlist *origin);
+xlist* xlist_join(xlist *list, xlist *other);
 
-xlist* xlist_add_node_head(xlist *list, void *value);
-xlist* xlist_add_node_tail(xlist *list, void *value);
-xlist* xlist_insert_node(xlist *list, xlist_node *pos, int after, void *value);
+xlist_node* xlist_add_node_head(xlist *list, void *value);
+xlist_node* xlist_add_node_tail(xlist *list, void *value);
+// after == AFTER(1) or after == BEFORE(0)
+xlist_node* xlist_insert_node(xlist *list, xlist_node *pos, int after, void *value);
 void xlist_delete_node(xlist *list, xlist_node *node);
 xlist_node* xlist_search_node(xlist *list, void *value);
-
-xlist* xlist_dup(xlist *origin);
-void xlist_join(xlist *list, xlist *other);
 
 xlist_iter* xlist_iter_create(xlist *list, xlist_iter_direction direction);
 void xlist_iter_destroy(xlist_iter *iter);

@@ -1,11 +1,12 @@
 //
 // Created by koushiro on 10/24/18.
 //
+#include <string.h>
 
-#include <assert.h>
-
+#include "xalloc.h"
 #include "xstr.h"
 #include "xskiplist.h"
+#include "xtest.h"
 
 int main() {
     xskiplist *list = xskiplist_create(32);
@@ -15,5 +16,6 @@ int main() {
 //    xskiplist_insert_node(list, xstr_create("node4"), 4.0);
 //    xskiplist_insert_node(list, xstr_create("node5"), 5.0);
     xskiplist_destroy(list);
+    test_report();
     return 0;
 }

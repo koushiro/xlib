@@ -6,6 +6,7 @@ set(TEST_FILES
         test_xstr.c
         test_xlist.c
         test_xskiplist.c
+        test_xdict.c
         )
 
 foreach(test_file ${TEST_FILES})
