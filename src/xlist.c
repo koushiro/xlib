@@ -42,6 +42,8 @@ void xlist_clear(xlist *list) {
 xlist* xlist_dup(xlist *origin) {
     assert(origin);
     xlist *copy = xmalloc(sizeof(xlist));
+    copy->head = copy->tail = NULL;
+    copy->len = 0;
     copy->dup = origin->dup;
     copy->free = origin->free;
     copy->match = origin->match;

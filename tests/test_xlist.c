@@ -82,14 +82,14 @@ int main() {
         xlist_iter_next(&backward_iter) == node4 && xlist_iter_next(&backward_iter) == node3 &&
         xlist_iter_next(&backward_iter) == node1 && xlist_iter_next(&backward_iter) == NULL);
 
-//    xlist *dup_list = xlist_dup(list);
-//    xlist_iter iter;
-//    xlist_iter_rewind_head(dup_list, &iter);
-//    test_assert("xlist_dup", xlist_len(dup_list) == 3);
-//    xlist_destroy(dup_list);
-//    list = xlist_join(list, dup_list);
-//    test_assert("xlist_join", xlist_len(list) == 6);
-
+    xlist *dup_list = xlist_dup(list);
+    xlist_iter iter;
+    xlist_iter_rewind_head(dup_list, &iter);
+    test_assert("xlist_dup", xlist_len(dup_list) == 3);
+    list = xlist_join(list, dup_list);
+    printf("len = %zu\n", xlist_len(list));
+    test_assert("xlist_join", xlist_len(list) == 6);
+    xlist_destroy(dup_list);
     xlist_destroy(list);
 
     test_report();
