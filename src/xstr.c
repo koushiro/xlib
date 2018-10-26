@@ -205,17 +205,16 @@ xstr xstr_tolower(xstr s) {
     return s;
 }
 
-xstr xstr_trim(xstr s, const char *cset) {
-    assert(s && cset);
+xstr xstr_trim(xstr s, const char *chars) {
+    assert(s && chars);
     char *start = s;
-    char *sp = start;
     char *end = s + xstr_len(s) - 1;
-    char *ep = end;
 
-    while (sp <= end && strchr(cset, *sp)) sp++;
-    while (ep > sp && strchr(cset, *ep)) ep--;
-    size_t len = (sp > ep) ? 0 : ((ep - sp) + 1);
-    if (s != sp) memmove(s, sp, len);
+    while (start <= end && strchr(chars, *start)) start++;
+    while (end > start && strchr(chars, *end)) end--;
+
+    size_t len = (start > end) ? 0 : ((end - start) + 1);
+    if (s != start) memmove(s, start, len);
     s[len] = '\0';
     xstr_set_len(s, len);
     return s;
@@ -225,6 +224,7 @@ xstr xstr_range(xstr s, ssize_t start, ssize_t end) {
     assert(s);
     size_t len = xstr_len(s);
     if (len == 0) return s;
+
     if (start < 0) {
         start += len;
         if (start < 0) start = 0;
@@ -233,6 +233,7 @@ xstr xstr_range(xstr s, ssize_t start, ssize_t end) {
         end += len;
         if (end < 0) end = 0;
     }
+
     size_t new_len = (size_t) ((start > end) ? 0 : (end - start) + 1);
     if (new_len != 0) {
         if (start >= (ssize_t)len) {
@@ -245,7 +246,7 @@ xstr xstr_range(xstr s, ssize_t start, ssize_t end) {
         start = 0;
     }
 
-    if (start && new_len) {
+    if (start != 0 && new_len) {
         memmove(s, s + start, new_len);
     }
     s[new_len] = '\0';

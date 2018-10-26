@@ -16,7 +16,7 @@ typedef struct xlist_node {
 
 typedef enum {
     FORWARD = 0,    // head --> tail
-    BACKWARD = 1,   // tail --> head
+    BACKWARD = 1,   // head <-- tail
 } xlist_iter_direction;
 
 typedef struct xlist_iter {
@@ -38,11 +38,11 @@ typedef struct xlist {
     match_func match;
 } xlist;
 
-enum {
+typedef enum {
     // for xlist_insert_node
     BEFORE = 0,
     AFTER = 1,
-};
+} xlist_node_relative_pos;
 
 static inline xlist_node* xlist_first(xlist *list) { return list->head; }
 static inline xlist_node* xlist_last(xlist *list) { return list->tail; }
@@ -68,8 +68,7 @@ xlist* xlist_join(xlist *list, xlist *other);
 
 xlist_node* xlist_add_node_head(xlist *list, void *value);
 xlist_node* xlist_add_node_tail(xlist *list, void *value);
-// after == AFTER(1) or after == BEFORE(0)
-xlist_node* xlist_insert_node(xlist *list, xlist_node *pos, int after, void *value);
+xlist_node* xlist_insert_node(xlist *list, xlist_node *pos, xlist_node_relative_pos after, void *value);
 void xlist_delete_node(xlist *list, xlist_node *node);
 xlist_node* xlist_search_node(xlist *list, void *value);
 

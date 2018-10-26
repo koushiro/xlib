@@ -28,10 +28,10 @@ void xlist_clear(xlist *list) {
     if (list == NULL) return;
 
     xlist_node *next;
-    xlist_node *cur = list->head;
+    xlist_node *cur = xlist_first(list);
     while (cur) {
-        if (list->free) list->free(cur->value);
-        next = cur->next;
+        if (list->free) list->free(xlist_node_value(cur));
+        next = xlist_node_next(cur);
         xfree(cur);
         cur = next;
     }
@@ -55,12 +55,12 @@ xlist* xlist_dup(xlist *origin) {
     while ((node = xlist_iter_next(&origin_iter)) != NULL) {
         void *copy_value;
         if (copy->dup) {
-            copy_value = copy->dup(node->value);
+            copy_value = copy->dup(xlist_node_value(node));
             if (copy_value == NULL) goto CLEANUP;
         } else {
             // If no 'dup' method is set,
             // the same 'value' pointer of the original node is used as 'value' of the copied node.
-            copy_value = node->value;
+            copy_value = xlist_node_value(node);
         }
 
         if (xlist_add_node_tail(copy, copy_value) == NULL) goto CLEANUP;
@@ -79,12 +79,12 @@ xlist* xlist_join(xlist *list, xlist *other) {
     if (other->len == 0) return list;
 
     if (list->len == 0) {
-        list->head = other->head;
-        list->tail = other->tail;
+        list->head = xlist_first(other);
+        list->tail = xlist_last(other);
     } else {
-        list->tail->next = other->head;
-        other->head->prev = list->tail;
-        list->tail = other->tail;
+        list->tail->next = xlist_first(other);
+        other->head->prev = xlist_last(list);
+        list->tail = xlist_last(other);
     }
 
     list->len += other->len;
@@ -127,7 +127,7 @@ xlist_node* xlist_add_node_tail(xlist *list, void *value) {
     return node;
 }
 
-xlist_node* xlist_insert_node(xlist *list, xlist_node *pos, int after, void *value) {
+xlist_node* xlist_insert_node(xlist *list, xlist_node *pos, xlist_node_relative_pos after, void *value) {
     assert(list && pos && value);
     xlist_node *node = xmalloc(sizeof(xlist_node));
     node->value = value;
@@ -178,13 +178,13 @@ xlist_node* xlist_search_node(xlist *list, void *value) {
     xlist_node *node;
     while ((node = xlist_iter_next(&iter)) != NULL) {
         if (list->match) {
-            if (list->match(node->value, value) == 0) {
+            if (list->match(xlist_node_value(node), value) == 0) {
                 return node;
             }
         } else {
             // If no 'match' method is set,
             // the 'value' pointer of every node is directly compared with the 'value' pointer.
-            if (value == node->value) {
+            if (xlist_node_value(node) == value) {
                 return node;
             }
         }
@@ -196,10 +196,10 @@ xlist_iter* xlist_iter_create(xlist *list, xlist_iter_direction direction) {
     assert(list);
     xlist_iter *iter = xmalloc(sizeof(xlist_iter));
     if (direction == FORWARD) {
-        iter->node = list->head;
+        iter->node = xlist_first(list);
     } else {
         // direction == BACKWARD
-        iter->node = list->tail;
+        iter->node = xlist_last(list);
     }
     iter->direction = direction;
     return iter;
@@ -214,10 +214,10 @@ xlist_node* xlist_iter_next(xlist_iter *iter) {
     xlist_node *cur_node = iter->node;
     if (cur_node) {
         if (iter->direction == FORWARD) {
-            iter->node = cur_node->next;
+            iter->node = xlist_node_next(cur_node);
         } else {
             // directoin == BACKWARD
-            iter->node = cur_node->prev;
+            iter->node = xlist_node_prev(cur_node);
         }
     }
     return cur_node;
@@ -225,12 +225,12 @@ xlist_node* xlist_iter_next(xlist_iter *iter) {
 
 void xlist_iter_rewind_head(xlist *list, xlist_iter *iter) {
     assert(list && iter);
-    iter->node = list->head;
+    iter->node = xlist_first(list);
     iter->direction = FORWARD;
 }
 
 void xlist_iter_rewind_tail(xlist *list, xlist_iter *iter) {
     assert(list && iter);
-    iter->node = list->tail;
+    iter->node = xlist_last(list);
     iter->direction = BACKWARD;
 }

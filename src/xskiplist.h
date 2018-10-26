@@ -8,51 +8,50 @@
 
 #include <stddef.h>
 
-#include "xstr.h"
-
+#define EPSILON 1e-6
+#define XSKIPLIST_MAX_LEVEL             32
 #define XSKIPLIST_RANDOM_PROBABILITY    0.5
 
+//  level i   ...
 //            +----+      +----+      +----+      +----+      +----+      +----+      +----+      +----+
-//  level3    |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |NULL| --+
+//  level 3   |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |NULL| --+
 //            +----+      +----+      +----+      +----+      +----+      +----+      +----+      +----+   |
-//  level2    |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |NULL|   |
+//  level 2   |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |NULL|   |
 //            +----+      +----+      +----+      +----+      +----+      +----+      +----+      +----+   | - forward pointer
-//  level1    |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |NULL|   |
+//  level 1   |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |NULL|   |
 //            +----+      +----+      +----+      +----+      +----+      +----+      +----+      +----+   |
-//  level0    |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |NULL| --+
+//  level 0   |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |    | ---> |NULL| --+
 //            +----+      +----+      +----+      +----+      +----+      +----+      +----+      +----+
-//   key      |head|      |key1|      |key2|      |key3|      |key4|      |key5|      |key6|      |tail|
-//            +----+      +----+      +----+      +----+      +----+      +----+      +----+      +----+
-//   value    |-INF|      |val1|      |val2|      |val3|      |val4|      |val5|      |val6|      | INF|
-//            +----+      +----+      +----+      +----+      +----+      +----+      +----+      +----+
-//               |           |                                                                      |
-//             header     xskiplist_node                                                          tailer
+//              |           |
+//             head       xskiplist_node
 //            |________________________________________________________________________________________|
 //                                                          |
 //                                                      xskiplist
+// level 0 is the original list.
 //
 typedef struct xskiplist_node {
-    xstr key;                           // unique signature.
     double value;                       // value used for sorting.
-    size_t level;                       // level count of the node. (could be 1 ~ xskiplist->max_level)
-    struct xskiplist_node *forward[];   // forward[level].
+    size_t level;                       // level of the node. (could be 0 ~ XSKIPLIST_MAX_LEVEL)
+    struct xskiplist_node *forward[];   // the size of forward array is level.
 } xskiplist_node;
 
 typedef struct xskiplist {
-    struct xskiplist_node *header;  // special node contains all level, header->forward[0] is the first node.
-    struct xskiplist_node *tailer;  // special node contains none level.
+    struct xskiplist_node *head;    // special node contains all level, head->forward[0] is the first node.
     size_t length;                  // the size of nodes (not contains header and tailer).
-    size_t level;                   // max level of current nodes. (could be 1 ~ max_level)
-    size_t max_level;               // the level of header (level limitation).
+    size_t level;                   // max level of current nodes. (could be 0 ~ XSKIPLIST_MAX_LEVEL)
 } xskiplist;
 
-xskiplist_node* xskiplist_node_create(xstr key, double value, size_t level);
+static inline xskiplist_node* xskiplist_head(xskiplist *list) { return list->head; }
+static inline size_t xskiplist_len(xskiplist *list) { return list->length; }
+
+xskiplist_node* xskiplist_node_create(double value, size_t level);
 void xskiplist_node_destroy(xskiplist_node *node);
 
-xskiplist* xskiplist_create(size_t max_level);
+xskiplist* xskiplist_create();
 void xskiplist_destroy(xskiplist *list);
 
-xskiplist_node* xskiplist_insert_node(xskiplist *list, xstr key, double value);
-int xskiplist_delete_node(xskiplist *list, xstr key, double value);
-xskiplist_node* xskiplist_search_node(xskiplist *list, xstr key, double value);
-size_t xskiplist_len(xskiplist *list);
+xskiplist_node* xskiplist_insert_node(xskiplist *list, double value);
+// delete the first node whose value == value.
+int xskiplist_delete_node(xskiplist *list, double value);
+// search the first node whose value == value.
+xskiplist_node* xskiplist_search_node(xskiplist *list, double value);

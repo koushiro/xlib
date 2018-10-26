@@ -23,13 +23,13 @@ int main() {
     xlist_node *node1 = xlist_add_node_head(list, xstr_create("node1"));
     test_assert("xlist_add_node_head",
         xlist_len(list) == 1 &&
-        xlist_first(list) == node1 && xlist_last(list) == node1 &&
+            xlist_first(list) == node1 && xlist_last(list) == node1 &&
         xlist_node_next(node1) == NULL && xlist_node_prev(node1) == NULL &&
         memcmp(xlist_node_value(node1), "node1\0", 6) == 0);
     xlist_node *node4 = xlist_add_node_tail(list, xstr_create("node4"));
     test_assert("xlist_add_node_tail",
         xlist_len(list) == 2 &&
-        xlist_first(list) == node1 && xlist_last(list) == node4 &&
+            xlist_first(list) == node1 && xlist_last(list) == node4 &&
             xlist_node_prev(node1) == NULL && xlist_node_next(node1) == node4 &&
             xlist_node_prev(node4) == node1 && xlist_node_next(node4) == NULL &&
             memcmp(xlist_node_value(node4), "node4\0", 6) == 0);

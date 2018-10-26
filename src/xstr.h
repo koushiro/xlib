@@ -58,6 +58,6 @@ xstr xstr_join_xstr(xstr *argv, size_t argc, const void *sep, size_t sep_len);
 xstr xstr_toupper(xstr s);
 xstr xstr_tolower(xstr s);
 
-xstr xstr_trim(xstr s, const char *cset);
+xstr xstr_trim(xstr s, const char *chars);
 
 xstr xstr_range(xstr s, ssize_t start, ssize_t end);
