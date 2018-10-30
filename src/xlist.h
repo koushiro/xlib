@@ -24,18 +24,18 @@ typedef struct xlist_iter {
     xlist_iter_direction direction;
 } xlist_iter;
 
-typedef void*(*dup_func)(void *ptr);
-typedef void(*free_func)(void *ptr);
-// \return 0: match successfully; !0: match failed.
-typedef int(*match_func)(void *ptr, void *value);
+typedef void*(*xlist_node_dup_func)(void *ptr);
+typedef void(*xlist_node_free_func)(void *ptr);
+// \return 0: equal; -1: less; 1: greater.
+typedef int(*xlist_node_cmp_func)(void *ptr, void *value);
 
 typedef struct xlist {
     struct xlist_node *head;
     struct xlist_node *tail;
     size_t len;
-    dup_func dup;
-    free_func free;
-    match_func match;
+    xlist_node_dup_func dup;
+    xlist_node_free_func free;
+    xlist_node_cmp_func cmp;
 } xlist;
 
 typedef enum {
@@ -52,13 +52,9 @@ static inline xlist_node* xlist_node_prev(xlist_node *node) { return node->prev;
 static inline xlist_node* xlist_node_next(xlist_node *node) { return node->next; }
 static inline void* xlist_node_value(xlist_node *node) { return node->value; }
 
-static inline void xlist_set_dup_func(xlist *list, dup_func dup) { list->dup = dup; }
-static inline void xlist_set_free_func(xlist *list, free_func free) { list->free = free; }
-static inline void xlist_set_match_func(xlist *list, match_func match) { list->match = match; }
-
-static inline dup_func xlist_get_dup_func(xlist *list) { return list->dup; }
-static inline free_func xlist_get_free_func(xlist *list) { return list->free; }
-static inline match_func xlist_get_match_func(xlist *list) { return list->match; }
+static inline void xlist_set_dup_func(xlist *list, xlist_node_dup_func dup) { list->dup = dup; }
+static inline void xlist_set_free_func(xlist *list, xlist_node_free_func free) { list->free = free; }
+static inline void xlist_set_cmp_func(xlist *list, xlist_node_cmp_func cmp) { list->cmp = cmp; }
 
 xlist* xlist_create(void);
 void xlist_destroy(xlist *list);

@@ -8,6 +8,22 @@
 #include "xlist.h"
 #include "xalloc.h"
 
+static xlist_node* xlist_node_create(void *value) {
+    xlist_node *node  = xmalloc(sizeof(xlist_node));
+    node->value = value;
+    node->prev = NULL;
+    node->next = NULL;
+    return node;
+}
+
+static void xlist_node_destroy(xlist *list, xlist_node *node) {
+    assert(list && list->free && node);
+    list->free(node->value);
+    xfree(node);
+}
+
+// ============================================================================
+
 xlist* xlist_create(void) {
     xlist *list = xmalloc(sizeof(xlist));
     list->head = NULL;
@@ -15,22 +31,26 @@ xlist* xlist_create(void) {
     list->len = 0;
     list->dup = NULL;
     list->free = NULL;
-    list->match = NULL;
+    list->cmp = NULL;
     return list;
 }
 
 void xlist_destroy(xlist *list) {
+    assert(list);
     xlist_clear(list);
     xfree(list);
 }
 
 void xlist_clear(xlist *list) {
-    if (list == NULL) return;
+    assert(list);
+    if (xlist_len(list) == 0) return;
+
+    assert(list->free);
 
     xlist_node *next;
     xlist_node *cur = xlist_first(list);
     while (cur) {
-        if (list->free) list->free(xlist_node_value(cur));
+        list->free(xlist_node_value(cur));
         next = xlist_node_next(cur);
         xfree(cur);
         cur = next;
@@ -40,13 +60,13 @@ void xlist_clear(xlist *list) {
 }
 
 xlist* xlist_dup(xlist *origin) {
-    assert(origin);
+    assert(origin && origin->dup && origin->free && origin->cmp);
     xlist *copy = xmalloc(sizeof(xlist));
     copy->head = copy->tail = NULL;
     copy->len = 0;
     copy->dup = origin->dup;
     copy->free = origin->free;
-    copy->match = origin->match;
+    copy->cmp = origin->cmp;
 
     xlist_iter origin_iter;
     xlist_iter_rewind_head(origin, &origin_iter);
@@ -54,15 +74,8 @@ xlist* xlist_dup(xlist *origin) {
     xlist_node *node;
     while ((node = xlist_iter_next(&origin_iter)) != NULL) {
         void *copy_value;
-        if (copy->dup) {
-            copy_value = copy->dup(xlist_node_value(node));
-            if (copy_value == NULL) goto CLEANUP;
-        } else {
-            // If no 'dup' method is set,
-            // the same 'value' pointer of the original node is used as 'value' of the copied node.
-            copy_value = xlist_node_value(node);
-        }
-
+        copy_value = copy->dup(xlist_node_value(node));
+        if (copy_value == NULL) goto CLEANUP;
         if (xlist_add_node_tail(copy, copy_value) == NULL) goto CLEANUP;
     }
     return copy;
@@ -95,8 +108,7 @@ xlist* xlist_join(xlist *list, xlist *other) {
 
 xlist_node* xlist_add_node_head(xlist *list, void *value) {
     assert(list && value);
-    xlist_node *node = xmalloc(sizeof(xlist_node));
-    node->value = value;
+    xlist_node *node = xlist_node_create(value);
     if (list->len == 0) {
         list->head = list->tail = node;
         node->prev = node->next = NULL;
@@ -112,8 +124,7 @@ xlist_node* xlist_add_node_head(xlist *list, void *value) {
 
 xlist_node* xlist_add_node_tail(xlist *list, void *value) {
     assert(list && value);
-    xlist_node *node = xmalloc(sizeof(xlist_node));
-    node->value = value;
+    xlist_node *node = xlist_node_create(value);
     if (list->len == 0) {
         list->head = list->tail = node;
         node->prev = node->next = NULL;
@@ -129,8 +140,7 @@ xlist_node* xlist_add_node_tail(xlist *list, void *value) {
 
 xlist_node* xlist_insert_node(xlist *list, xlist_node *pos, xlist_node_relative_pos after, void *value) {
     assert(list && pos && value);
-    xlist_node *node = xmalloc(sizeof(xlist_node));
-    node->value = value;
+    xlist_node *node = xlist_node_create(value);
     if (after == AFTER) {
         // insert node after pos
         node->prev = pos;
@@ -154,7 +164,7 @@ xlist_node* xlist_insert_node(xlist *list, xlist_node *pos, xlist_node_relative_
 }
 
 void xlist_delete_node(xlist *list, xlist_node *node) {
-    assert(list && node);
+    assert(list && list->free && node);
     if (node->prev) {
         node->prev->next = node->next;
     } else {
@@ -165,28 +175,19 @@ void xlist_delete_node(xlist *list, xlist_node *node) {
     } else {
         list->tail = node->prev;
     }
-    if (list->free) list->free(node->value);
-    xfree(node);
+    xlist_node_destroy(list, node);
     list->len--;
 }
 
 xlist_node* xlist_search_node(xlist *list, void *value) {
-    assert(list && value);
+    assert(list && list->cmp && value);
     xlist_iter iter;
     xlist_iter_rewind_head(list, &iter);
 
     xlist_node *node;
     while ((node = xlist_iter_next(&iter)) != NULL) {
-        if (list->match) {
-            if (list->match(xlist_node_value(node), value) == 0) {
-                return node;
-            }
-        } else {
-            // If no 'match' method is set,
-            // the 'value' pointer of every node is directly compared with the 'value' pointer.
-            if (xlist_node_value(node) == value) {
-                return node;
-            }
+        if (list->cmp(xlist_node_value(node), value) == 0) {
+            return node;
         }
     }
     return NULL;

@@ -3,13 +3,27 @@
 //
 
 #include <assert.h>
-#include <math.h>
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
 
 #include "xskiplist.h"
 #include "xalloc.h"
+
+static xskiplist_node* xskiplist_node_create(void *value, size_t level) {
+    xskiplist_node *node = xmalloc(sizeof(xskiplist_node) +
+                                   (level+1) * sizeof(xskiplist_node*));
+    node->value = value;
+    node->level = level;
+    memset(node->forward, 0, (level+1) * sizeof(xskiplist_node*));
+    return node;
+}
+
+static void xskiplist_node_destroy(xskiplist *list, xskiplist_node *node) {
+    assert(list && list->free && node);
+    list->free(node->value);
+    xfree(node);
+}
 
 static size_t gen_random_level(size_t max_level, double probability) {
     assert(probability > 0.0 && probability < 1.0);
@@ -25,44 +39,29 @@ static size_t gen_random_level(size_t max_level, double probability) {
 
 // ============================================================================
 
-xskiplist_node *xskiplist_node_create(double value, size_t level) {
-    assert(!isnan(value));
-    xskiplist_node *node = xmalloc(sizeof(xskiplist_node) +
-        (level+1) * sizeof(xskiplist_node*));
-    node->value = value;
-    node->level = level;
-    memset(node->forward, 0, (level+1) * sizeof(xskiplist_node*));
-    return node;
-}
-
-void xskiplist_node_destroy(xskiplist_node *node) {
-    assert(node);
-    xfree(node);
-}
-
 xskiplist* xskiplist_create() {
     xskiplist *list = xmalloc(sizeof(xskiplist));
-    list->head = xskiplist_node_create(-INFINITY, XSKIPLIST_MAX_LEVEL);
+    list->head = xskiplist_node_create(NULL, XSKIPLIST_MAX_LEVEL);
     list->length = 0;
     list->level = 0;
     return list;
 }
 
 void xskiplist_destroy(xskiplist *list) {
-    assert(list);
+    assert(list && list->free);
     xskiplist_node *node = list->head->forward[0];
     xskiplist_node *next = NULL;
     while (node) {
         next = node->forward[0];
-        xskiplist_node_destroy(node);
+        xskiplist_node_destroy(list, node);
         node = next;
     }
-    xskiplist_node_destroy(list->head);
+    xskiplist_node_destroy(list, list->head);
     xfree(list);
 }
 
-xskiplist_node *xskiplist_insert_node(xskiplist *list, double value) {
-    assert(list && !isnan(value));
+xskiplist_node *xskiplist_insert_node(xskiplist *list, void *value) {
+    assert(list && list->cmp && value);
 
     xskiplist_node *current = xskiplist_head(list);
     // all nodes needed to update forward pointer (before insert position).
@@ -70,7 +69,7 @@ xskiplist_node *xskiplist_insert_node(xskiplist *list, double value) {
     memset(update, 0, (XSKIPLIST_MAX_LEVEL+1) * sizeof(xskiplist_node*));
     // search the insert position.
     for (int i = list->level; i >= 0; --i) {
-        while (current->forward[i] && current->forward[i]->value < value) {
+        while (current->forward[i] && list->cmp(current->forward[i]->value, value) == -1) {
             current = current->forward[i];
         }
         update[i] = current;     // when insert node firstly, update[i] = list->header.
@@ -78,7 +77,7 @@ xskiplist_node *xskiplist_insert_node(xskiplist *list, double value) {
 
     // reach level 0 and forward pointer to right, which is desired position to insert node.
     current = current->forward[0];
-    if (current && fabs(current->value - value) < EPSILON) {    // same value is existed.
+    if (current && list->cmp(current->value, value) == 0) {    // same value is existed.
         return current;
     }
 
@@ -102,8 +101,8 @@ xskiplist_node *xskiplist_insert_node(xskiplist *list, double value) {
     return node;
 }
 
-int xskiplist_delete_node(xskiplist *list, double value) {
-    assert(list && !isnan(value));
+int xskiplist_delete_node(xskiplist *list, void *value) {
+    assert(list && list->cmp && list->free && value);
     if (xskiplist_len(list) == 0) return -1;
 
     xskiplist_node *current = xskiplist_head(list);
@@ -112,7 +111,7 @@ int xskiplist_delete_node(xskiplist *list, double value) {
     memset(update, 0, (XSKIPLIST_MAX_LEVEL+1) * sizeof(xskiplist_node*));
     // search the delete position.
     for (int i = list->level; i >= 0; --i) {
-        while (current->forward[i] && current->forward[i]->value < value) {
+        while (current->forward[i] && list->cmp(current->forward[i]->value, value) == -1) {
             current = current->forward[i];
         }
         update[i] = current;
@@ -120,7 +119,7 @@ int xskiplist_delete_node(xskiplist *list, double value) {
 
     // reach level 0 and forward pointer to right, which is possibly desired node.
     current = current->forward[0];
-    if (current && fabs(current->value - value) < EPSILON) {
+    if (current && list->cmp(current->value, value) == 0) {
         for (int i = list->level; i >= 0; --i) {
             if (update[i]->forward[i] == current) {
                 update[i]->forward[i] = current->forward[i];
@@ -131,25 +130,25 @@ int xskiplist_delete_node(xskiplist *list, double value) {
             --list->level;
         }
         --list->length;
-        xskiplist_node_destroy(current);
+        xskiplist_node_destroy(list, current);
         return 0;
     }
     return -1;
 }
 
-xskiplist_node* xskiplist_search_node(xskiplist *list, double value) {
-    assert(list);
+xskiplist_node* xskiplist_search_node(xskiplist *list, void *value) {
+    assert(list && list->cmp && value);
 
     xskiplist_node *current = xskiplist_head(list);
     // from the high level to low level
     for (int i = list->level; i >= 0; --i) {
-        while (current->forward[i] && current->forward[i]->value < value) {
+        while (current->forward[i] && list->cmp(current->forward[i]->value, value) == -1) {
             current = current->forward[i];
         }
     }
 
     // reach level 0 and forward pointer to right, which is possibly desired node.
     current = current->forward[0];
-    return current && fabs(current->value - value) < EPSILON
+    return current && list->cmp(current->value, value) == 0
             ? current : NULL;
 }

@@ -25,7 +25,8 @@ size_t failed_test_num = 0;
 
 #define test_report() \
     do { \
-        printf("%zu test(s), %zu passed, %zu failed, (%zu/%zu).\n", \
+        printf("==========================================================\n" \
+               "%zu test(s), %zu passed, %zu failed, (%zu/%zu).\n", \
             test_num, test_num - failed_test_num, failed_test_num, \
             test_num - failed_test_num, test_num); \
         if (failed_test_num > 0) { \
