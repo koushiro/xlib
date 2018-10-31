@@ -16,9 +16,9 @@ int main() {
     xlist_destroy(list);
 
     list = xlist_create();
-    xlist_set_free_func(list, (xlist_node_free_func)xstr_destroy);
-    xlist_set_cmp_func(list, (xlist_node_cmp_func)xstr_cmp);
-    xlist_set_dup_func(list, (xlist_node_dup_func)xstr_dup);
+    xlist_set_free_func(list, (xlist_node_value_free_func)xstr_destroy);
+    xlist_set_cmp_func(list, (xlist_node_value_cmp_func)xstr_cmp);
+    xlist_set_dup_func(list, (xlist_node_value_dup_func)xstr_dup);
 
     xlist_node *node1 = xlist_add_node_head(list, xstr_create("node1"));
     test_assert("xlist_add_node_head",
