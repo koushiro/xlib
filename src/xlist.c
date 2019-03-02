@@ -8,15 +8,15 @@
 #include "xlist.h"
 #include "xalloc.h"
 
-static xlist_node* xlist_node_create(void *value) {
-    xlist_node *node  = xmalloc(sizeof(xlist_node));
+static xlist_node* xlist_node_create(void* value) {
+    xlist_node* node = xmalloc(sizeof(xlist_node));
     node->value = value;
     node->prev = NULL;
     node->next = NULL;
     return node;
 }
 
-static void xlist_node_destroy(xlist *list, xlist_node *node) {
+static void xlist_node_destroy(xlist* list, xlist_node* node) {
     assert(list && list->free && node);
     list->free(node->value);
     xfree(node);
@@ -25,7 +25,7 @@ static void xlist_node_destroy(xlist *list, xlist_node *node) {
 // ============================================================================
 
 xlist* xlist_create(void) {
-    xlist *list = xmalloc(sizeof(xlist));
+    xlist* list = xmalloc(sizeof(xlist));
     list->head = NULL;
     list->tail = NULL;
     list->len = 0;
@@ -35,20 +35,20 @@ xlist* xlist_create(void) {
     return list;
 }
 
-void xlist_destroy(xlist *list) {
+void xlist_destroy(xlist* list) {
     assert(list);
     xlist_clear(list);
     xfree(list);
 }
 
-void xlist_clear(xlist *list) {
+void xlist_clear(xlist* list) {
     assert(list);
     if (xlist_len(list) == 0) return;
 
     assert(list->free);
 
-    xlist_node *next;
-    xlist_node *cur = xlist_first(list);
+    xlist_node* next;
+    xlist_node* cur = xlist_first(list);
     while (cur) {
         list->free(xlist_node_value(cur));
         next = xlist_node_next(cur);
@@ -59,9 +59,9 @@ void xlist_clear(xlist *list) {
     list->len = 0;
 }
 
-xlist* xlist_dup(xlist *origin) {
+xlist* xlist_dup(xlist* origin) {
     assert(origin && origin->dup && origin->free && origin->cmp);
-    xlist *copy = xmalloc(sizeof(xlist));
+    xlist* copy = xmalloc(sizeof(xlist));
     copy->head = copy->tail = NULL;
     copy->len = 0;
     copy->dup = origin->dup;
@@ -71,9 +71,9 @@ xlist* xlist_dup(xlist *origin) {
     xlist_iter origin_iter;
     xlist_iter_rewind_head(origin, &origin_iter);
 
-    xlist_node *node;
+    xlist_node* node;
     while ((node = xlist_iter_next(&origin_iter)) != NULL) {
-        void *copy_value;
+        void* copy_value;
         copy_value = copy->dup(xlist_node_value(node));
         if (copy_value == NULL) goto CLEANUP;
         if (xlist_add_node_tail(copy, copy_value) == NULL) goto CLEANUP;
@@ -87,7 +87,7 @@ xlist* xlist_dup(xlist *origin) {
     }
 }
 
-xlist* xlist_join(xlist *list, xlist *other) {
+xlist* xlist_join(xlist* list, xlist* other) {
     assert(list && other);
     if (other->len == 0) return list;
 
@@ -106,9 +106,9 @@ xlist* xlist_join(xlist *list, xlist *other) {
     return list;
 }
 
-xlist_node* xlist_add_node_head(xlist *list, void *value) {
+xlist_node* xlist_add_node_head(xlist* list, void* value) {
     assert(list && value);
-    xlist_node *node = xlist_node_create(value);
+    xlist_node* node = xlist_node_create(value);
     if (list->len == 0) {
         list->head = list->tail = node;
         node->prev = node->next = NULL;
@@ -122,9 +122,9 @@ xlist_node* xlist_add_node_head(xlist *list, void *value) {
     return node;
 }
 
-xlist_node* xlist_add_node_tail(xlist *list, void *value) {
+xlist_node* xlist_add_node_tail(xlist* list, void* value) {
     assert(list && value);
-    xlist_node *node = xlist_node_create(value);
+    xlist_node* node = xlist_node_create(value);
     if (list->len == 0) {
         list->head = list->tail = node;
         node->prev = node->next = NULL;
@@ -138,9 +138,9 @@ xlist_node* xlist_add_node_tail(xlist *list, void *value) {
     return node;
 }
 
-xlist_node* xlist_insert_node(xlist *list, xlist_node *pos, xlist_node_relative_pos after, void *value) {
+xlist_node* xlist_insert_node(xlist* list, xlist_node* pos, xlist_node_relative_pos after, void* value) {
     assert(list && pos && value);
-    xlist_node *node = xlist_node_create(value);
+    xlist_node* node = xlist_node_create(value);
     if (after == AFTER) {
         // insert node after pos
         node->prev = pos;
@@ -163,7 +163,7 @@ xlist_node* xlist_insert_node(xlist *list, xlist_node *pos, xlist_node_relative_
     return node;
 }
 
-void xlist_delete_node(xlist *list, xlist_node *node) {
+void xlist_delete_node(xlist* list, xlist_node* node) {
     assert(list && list->free && node);
     if (node->prev) {
         node->prev->next = node->next;
@@ -179,12 +179,12 @@ void xlist_delete_node(xlist *list, xlist_node *node) {
     list->len--;
 }
 
-xlist_node* xlist_search_node(xlist *list, void *value) {
+xlist_node* xlist_search_node(xlist* list, void* value) {
     assert(list && list->cmp && value);
     xlist_iter iter;
     xlist_iter_rewind_head(list, &iter);
 
-    xlist_node *node;
+    xlist_node* node;
     while ((node = xlist_iter_next(&iter)) != NULL) {
         if (list->cmp(xlist_node_value(node), value) == 0) {
             return node;
@@ -193,9 +193,9 @@ xlist_node* xlist_search_node(xlist *list, void *value) {
     return NULL;
 }
 
-xlist_iter* xlist_iter_create(xlist *list, xlist_iter_direction direction) {
+xlist_iter* xlist_iter_create(xlist* list, xlist_iter_direction direction) {
     assert(list);
-    xlist_iter *iter = xmalloc(sizeof(xlist_iter));
+    xlist_iter* iter = xmalloc(sizeof(xlist_iter));
     if (direction == FORWARD) {
         iter->node = xlist_first(list);
     } else {
@@ -206,13 +206,13 @@ xlist_iter* xlist_iter_create(xlist *list, xlist_iter_direction direction) {
     return iter;
 }
 
-void xlist_iter_destroy(xlist_iter *iter) {
+void xlist_iter_destroy(xlist_iter* iter) {
     xfree(iter);
 }
 
-xlist_node* xlist_iter_next(xlist_iter *iter) {
+xlist_node* xlist_iter_next(xlist_iter* iter) {
     assert(iter);
-    xlist_node *cur_node = iter->node;
+    xlist_node* cur_node = iter->node;
     if (cur_node) {
         if (iter->direction == FORWARD) {
             iter->node = xlist_node_next(cur_node);
@@ -224,13 +224,13 @@ xlist_node* xlist_iter_next(xlist_iter *iter) {
     return cur_node;
 }
 
-void xlist_iter_rewind_head(xlist *list, xlist_iter *iter) {
+void xlist_iter_rewind_head(xlist* list, xlist_iter* iter) {
     assert(list && iter);
     iter->node = xlist_first(list);
     iter->direction = FORWARD;
 }
 
-void xlist_iter_rewind_tail(xlist *list, xlist_iter *iter) {
+void xlist_iter_rewind_tail(xlist* list, xlist_iter* iter) {
     assert(list && iter);
     iter->node = xlist_last(list);
     iter->direction = BACKWARD;

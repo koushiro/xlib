@@ -8,12 +8,12 @@
 
 ## Components
 
-- [xalloc](src/xalloc.h) encapsulation of memory operations.
-- [xtest](src/xtest.h) simple test help functions.
-- [xstr](src/xstr.h) a string library.
-- [xlist](src/xlist.h) double linked list.
-- [xskiplist](src/xskiplist.h) skip list.
-- [xdict](src/xdict.h) dictionary(map) based on hash table.
+- [xalloc](src/xalloc.h): an encapsulation of memory operations.
+- [xtest](src/xtest.h): Some simple test help functions.
+- [xtype](src/xtype.h): Some common types
+- [xstr](src/xstr.h): String.
+- [xlist](src/xlist.h): Double linked list.
+- [xskiplist](src/xskiplist.h): Skip list.
 
 See the test case for specific usage.
 

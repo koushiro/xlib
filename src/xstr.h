@@ -20,18 +20,27 @@ typedef struct __attribute__ ((__packed__)) xstr_hdr {
     char buf[];
 } xstr_hdr;
 
-static inline xstr_hdr* xstr_hdr_ptr(const xstr s) { return (xstr_hdr*)(s - sizeof(xstr_hdr)); }
-static inline void* xstr_alloc_ptr(const xstr s) { return (void*)xstr_hdr_ptr(s); }
+static inline xstr_hdr* xstr_hdr_ptr(const xstr s) { return (xstr_hdr*) (s - sizeof(xstr_hdr)); }
+
+static inline void* xstr_alloc_ptr(const xstr s) { return (void*) xstr_hdr_ptr(s); }
 
 static inline size_t xstr_len(const xstr s) { return xstr_hdr_ptr(s)->len; }
+
 static inline size_t xstr_cap(const xstr s) { return xstr_hdr_ptr(s)->cap; }
-static inline size_t xstr_avail(const xstr s) { xstr_hdr *hdr = xstr_hdr_ptr(s); return hdr->cap - hdr->len; }
+
+static inline size_t xstr_avail(const xstr s) {
+    xstr_hdr* hdr = xstr_hdr_ptr(s);
+    return hdr->cap - hdr->len;
+}
+
 static inline size_t xstr_alloc_size(const xstr s) { return sizeof(xstr_hdr) + xstr_cap(s) + 1; }
+
 static inline void xstr_set_len(xstr s, size_t new_len) { xstr_hdr_ptr(s)->len = new_len; }
+
 static inline void xstr_set_cap(xstr s, size_t new_cap) { xstr_hdr_ptr(s)->cap = new_cap; }
 
-xstr xstr_create_raw(const void *init, size_t init_len);
-xstr xstr_create(const char *init); // create xstr from a null terminated C string
+xstr xstr_create_raw(const void* init, size_t init_len);
+xstr xstr_create(const char* init); // create xstr from a null terminated C string
 void xstr_destroy(xstr s);
 void xstr_clear(xstr s);
 xstr xstr_dup(const xstr s);
@@ -41,23 +50,23 @@ xstr xstr_shrink(xstr s);
 
 int xstr_cmp(const xstr s1, const xstr s2);
 
-xstr xstr_copy(xstr dest, const void *src, size_t len);
-xstr xstr_copy_cstr(xstr dest, const char *src);
+xstr xstr_copy(xstr dest, const void* src, size_t len);
+xstr xstr_copy_cstr(xstr dest, const char* src);
 xstr xstr_copy_xstr(xstr dest, const xstr src);
 
-xstr xstr_cat(xstr dest, const void *src, size_t len);
-xstr xstr_cat_cstr(xstr dest, const char *src);
+xstr xstr_cat(xstr dest, const void* src, size_t len);
+xstr xstr_cat_cstr(xstr dest, const char* src);
 xstr xstr_cat_xstr(xstr s, const xstr t);
 
-xstr xstr_cat_vprintf(xstr s, const char *fmt, va_list ap);
-xstr xstr_cat_printf(xstr s, const char *fmt, ...);
+xstr xstr_cat_vprintf(xstr s, const char* fmt, va_list ap);
+xstr xstr_cat_printf(xstr s, const char* fmt, ...);
 
-xstr xstr_join_cstr(char **argv, size_t argc, const char *sep);
-xstr xstr_join_xstr(xstr *argv, size_t argc, const void *sep, size_t sep_len);
+xstr xstr_join_cstr(char** argv, size_t argc, const char* sep);
+xstr xstr_join_xstr(xstr* argv, size_t argc, const void* sep, size_t sep_len);
 
 xstr xstr_toupper(xstr s);
 xstr xstr_tolower(xstr s);
 
-xstr xstr_trim(xstr s, const char *chars);
+xstr xstr_trim(xstr s, const char* chars);
 
 xstr xstr_range(xstr s, ssize_t start, ssize_t end);

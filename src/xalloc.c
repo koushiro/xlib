@@ -13,29 +13,29 @@ static void xalloc_default_oom(size_t size) {
     abort();
 }
 
-static void (*xalloc_oom_handler)(size_t) = xalloc_default_oom;
+static void (* xalloc_oom_handler)(size_t) = xalloc_default_oom;
 
-void xalloc_set_oom_handler(void (*oom_handler)(size_t)) {
+void xalloc_set_oom_handler(void (* oom_handler)(size_t)) {
     xalloc_oom_handler = oom_handler;
 }
 
-void *xmalloc(size_t size) {
-    void *ptr = malloc(size);
+void* xmalloc(size_t size) {
+    void* ptr = malloc(size);
     if (!ptr) xalloc_oom_handler(size);
     return ptr;
 }
 
-void *xcalloc(size_t num, size_t size) {
-    void *ptr = calloc(num, size);
+void* xcalloc(size_t num, size_t size) {
+    void* ptr = calloc(num, size);
     if (!ptr) xalloc_oom_handler(size);
     return ptr;
 }
 
-void *xrealloc(void *ptr, size_t size) {
+void* xrealloc(void* ptr, size_t size) {
     if (ptr == NULL) return NULL;
-    void *newptr = realloc(ptr, size);
-    if (!newptr) xalloc_oom_handler(size);
-    return newptr;
+    void* new_ptr = realloc(ptr, size);
+    if (!new_ptr) xalloc_oom_handler(size);
+    return new_ptr;
 }
 
 void xfree(void* ptr) {

@@ -4,12 +4,11 @@ set(XLIB
         xalloc.h
         xalloc.c
         xtest.h
+        xtype.h
         xstr.h
         xstr.c
         xlist.h
         xlist.c
-        xdict.h
-        xdict.c
         xskiplist.h
         xskiplist.c
         )
